@@ -1,0 +1,89 @@
+{
+  "customer": [
+    {
+      "name": "Antony",
+      "gender": "male",
+      "age": "24",
+      "phone": "7871824241",
+      "address": "Eruvadi",
+      "id": 1
+    },
+    {
+      "name": "Paul ",
+      "gender": "male",
+      "age": "25",
+      "phone": "9899898989",
+      "address": "vallioor",
+      "id": 2
+    },
+    {
+      "name": "Rajan",
+      "gender": "male",
+      "age": "23",
+      "phone": "97979797979",
+      "address": "vallioor",
+      "id": 3
+    },
+    {
+      "name": "vinish",
+      "gender": "male",
+      "age": "26",
+      "phone": "97979797979",
+      "address": "vellamadam",
+      "id": 4
+    }
+  ],
+  "product_details": [
+    {
+      "id": 1,
+      "customerId": 1,
+      "customerName": "Antony",
+      "Date": "28-12-2022 00:00:00",
+      "ProductName": "gold",
+      "PrincipleAmount": 10000,
+      "years": 1,
+      "percentage_of_intrest": 10,
+      "intrest_amount": 1000,
+      "total_amount": 11000,
+      "monthly_EMI": 916.6666666666666,
+      "monthly_intrest": 0.008333333333333333,
+      "description": ""
+    },
+    {
+      "id": 2,
+      "customerId": 2,
+      "customerName": "Paul ",
+      "Date": "28-12-2022 00:00:00",
+      "ProductName": "qwe",
+      "PrincipleAmount": 3,
+      "years": 123,
+      "percentage_of_intrest": 123,
+      "intrest_amount": 453.87,
+      "total_amount": 456.87,
+      "monthly_EMI": 38.0725,
+      "monthly_intrest": 0.1025,
+      "description": "123"
+    },
+    {
+      "id": 3,
+      "customerId": 3,
+      "customerName": "Rajan",
+      "Date": "28-12-2022 00:00:00",
+      "ProductName": "wer",
+      "PrincipleAmount": 345345,
+      "years": 34,
+      "percentage_of_intrest": 4,
+      "intrest_amount": 469669.2,
+      "total_amount": 815014.2,
+      "monthly_EMI": 67917.84999999999,
+      "monthly_intrest": 0.0033333333333333335,
+      "description": ""
+    }
+  ],
+  "main_transaction": [
+    
+  ],
+  "all_transaction": [
+   
+  ]
+}
