@@ -81,9 +81,27 @@
     }
   ],
   "main_transaction": [
-    
+    {
+      "id": 1,
+      "customerId": 1,
+      "customerName": "Antony",
+      "loanAmount": 10000,
+      "startBalance": 8326.388888888889,
+      "principal": 847.2800925925926,
+      "EMI": 916.6666666666666,
+      "endBalance": 7479.108796296296
+    }
   ],
   "all_transaction": [
-   
+    {
+      "id": 2,
+      "customerId": 1,
+      "customerName": "Antony",
+      "loanAmount": 10000,
+      "startBalance": 9166.666666666666,
+      "principal": 840.2777777777777,
+      "EMI": 916.6666666666666,
+      "endBalance": 8326.388888888889
+    }
   ]
 }
