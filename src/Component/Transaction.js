@@ -6,7 +6,7 @@ import { MdPayment, MdPayments } from 'react-icons/md';
 import Api from '../api/Api';
 
 const Transaction = () => {
-    const { getData, product, mainTransaction, setMainTransaction, allTransaction, setAllTransaction } = useContext(DataContext);
+    const { getData, product, mainTransaction, setMainTransaction, allTransaction, setAllTransaction, search, setSearch } = useContext(DataContext);
     const [payment, setPayment] = useState(0);
     const [name, setname] = useState("")
     const [CuId, setCuId] = useState(0)
@@ -16,7 +16,6 @@ const Transaction = () => {
     const [start_balance, setStart_balance] = useState(0);
     const [monthly_intrest, setMonthly_intrest] = useState(0);
     const [loanAmount, setLoanAmount] = useState(0);
-
 
     const handlePayment = async (id, cusId, name, amount, monInt, emi) => {
         setPayment(1);
@@ -28,10 +27,10 @@ const Transaction = () => {
         setMonthly_intrest(monInt);
         setPayEmi(emi)
 
-        const filtered = mainTransaction.filter((data) => data.customerId === cusId);
+        const filtered = mainTransaction.filter((data) => data.id === id);
         if (filtered.length > 0) {
             const data = {
-                id: Id,
+                id: id,
                 customerId: cusId,
                 customerName: name,
                 loanAmount: amount,
@@ -41,16 +40,15 @@ const Transaction = () => {
                 endBalance: filtered[0].endBalance
             }
             try {
-                const response = await Api.put(`/main_transaction/${cusId}`, data);
-                setMainTransaction(mainTransaction.map((obj) => obj.customerId === cusId ? { ...response.data } : obj));
+                const response = await Api.put(`/main_transaction/${id}`, data);
+                setMainTransaction(mainTransaction.map((obj) => obj.id === id ? { ...response.data } : obj));
             } catch (err) {
                 console.log(err.message);
             }
         }
     }
 
-
-
+    // auto call from handleAllTransaction
 
     const handlePay = async () => {
 
@@ -60,10 +58,9 @@ const Transaction = () => {
         const principal = payEmi - intrest;
         const endBalance = start_balance - principal;
 
-        const filtered = mainTransaction.filter((data) => data.customerId === CuId)
-        const id = mainTransaction.length ? mainTransaction[mainTransaction.length - 1].id + 1 : 1;
+        const filtered = mainTransaction.filter((data) => data.id === Id)
         const data = {
-            id: id,
+            id: Id,
             customerId: CuId,
             customerName: name,
             loanAmount: loanAmount,
@@ -80,14 +77,14 @@ const Transaction = () => {
                 console.log(err.message);
             }
         } else {
-            const filtered = mainTransaction.filter((data) => data.customerId === CuId);
+            const filtered = mainTransaction.filter((data) => data.id === Id);
             // intrest Calculation for monthly transaction
 
             const intrest = filtered[0].startBalance * monthly_intrest;
             const principal = payEmi - intrest;
             const endBalance = filtered[0].startBalance - principal;
             const data = {
-                id: id,
+                id: Id,
                 customerId: CuId,
                 customerName: name,
                 loanAmount: loanAmount,
@@ -96,23 +93,32 @@ const Transaction = () => {
                 EMI: payEmi,
                 endBalance: endBalance
             }
+            const data1 = {
+                customerId: CuId,
+                customerName: name,
+                loanAmount: loanAmount,
+                startBalance: filtered[0].startBalance,
+                principal: principal,
+                EMI: payEmi,
+                endBalance: endBalance
+            }
+
             try {
-                const response = await Api.put(`/main_transaction/${CuId}` , data);
-                setMainTransaction(mainTransaction.map((obj) => obj.customerId === CuId ? {...response.data} : obj));
-                const response1 = await Api.post('/all_transaction' , data)
-                setAllTransaction([...allTransaction , response1.data])
-            } catch (err ) {
+                const response = await Api.put(`/main_transaction/${Id}`, data);
+                setMainTransaction(mainTransaction.map((obj) => obj.id === Id ? { ...response.data } : obj));
+                const response1 = await Api.post('/all_transaction', data1)
+                setAllTransaction([...allTransaction, response1.data])
+            } catch (err) {
                 console.log(err.message);
             }
-            
         }
     }
+
+    // for pay monthly EMI
     const handleAllTransaction = async () => {
         const filtered = allTransaction.filter((data) => data.customerId === CuId)
 
-        if (filtered.lenght < 0) {
-            // main intrest Calculation
-
+        // main intrest Calculation
         const intrest = start_balance * monthly_intrest;
         const principal = payEmi - intrest;
         const endBalance = start_balance - principal;
@@ -128,25 +134,99 @@ const Transaction = () => {
             EMI: payEmi,
             endBalance: endBalance
         }
-        try {
-            const response = await Api.post('/all_transaction', data);
-            setAllTransaction([...allTransaction, response.data])
-
-        } catch (err) {
-            console.log(err.message);
+        // first time post only
+        if (filtered.length === 0) {
+            try {
+                const response = await Api.post('/all_transaction', data);
+                setAllTransaction([...allTransaction, response.data])
+            } catch (err) {
+                console.log(err.message);
+            }
         }
-        } 
         handlePay();
         setPayment(0);
+        setId(0)
+        setCuId(0)
+        setname('')
+        setStart_balance(0)
+        setLoanAmount(0)
+        setMonthly_intrest(0);
+        setPayEmi(0)
     }
     // pay principal Amount
 
-    const handlePrincipal =() => {
+    const handlePrincipal = (id, cusId, name, amount, monInt, emi) => {
         setPayment(2);
+        setId(id)
+        setCuId(cusId)
+        setname(name)
+        setStart_balance(amount)
+        setLoanAmount(amount)
+        setMonthly_intrest(monInt);
+        setPayEmi(emi)
     }
 
     const handlePayPrincipal = async () => {
-        setPayment(0)
+
+        const filtered = mainTransaction.filter((data) => data.id === Id);
+
+        if(filtered.length > 0){
+            const payAmount = parseFloat(filtered[0].endBalance) - parseFloat(payPrincipal)
+
+            const intrest = payAmount * monthly_intrest;
+            const principal = payEmi - intrest;
+            const data = {
+                id: Id,
+                customerId: CuId,
+                customerName: name,
+                loanAmount: loanAmount,
+                startBalance: payAmount,
+                principal: principal,
+                EMI: payEmi,
+                endBalance: payAmount
+            }
+            try {
+                const response = await Api.put(`main_transaction/${Id}` , data)
+                setMainTransaction(mainTransaction.map((obj) => obj.id === Id ? {...response.data} : obj))
+            } catch (err) {
+                console.log(err.message);
+            }
+        } else {
+        const balance = loanAmount - payPrincipal   
+        const intrest = balance * monthly_intrest;
+        const principal = payEmi - intrest;
+        // const endBalance = balance - principal;
+            const data = {
+                id: Id,
+                customerId: CuId,
+                customerName: name,
+                loanAmount: loanAmount,
+                startBalance: balance,
+                principal: principal,
+                EMI: payEmi,
+                endBalance: balance
+            }
+            try{
+                const response = await Api.post('/main_transaction' , data)
+                setMainTransaction([...mainTransaction , response.data])
+                const response1 = await Api.post('/all_transaction' , data)
+                setAllTransaction([...allTransaction , response1.data])
+            } catch(err){
+                console.log(err.message);
+            }
+        }
+       
+       
+        
+        setPayment(0);
+        setId(0)
+        setCuId(0)
+        setname('')
+        setStart_balance(0)
+        setLoanAmount(0)
+        setMonthly_intrest(0);
+        setPayEmi(0)
+        setPayPrincipal(0);
     }
     return (
         <Container>
@@ -159,21 +239,37 @@ const Transaction = () => {
                     </div>
                 </Col>
                 <Col>
+                    <div>
+                        <Form.Control
+                            type='text'
+                            placeholder='Search...'
+                            value={search}
+                            onChange={(e) => setSearch(e.target.value)}
+                        />
+                    </div>
                     <Table>
                         <thead>
                             <tr>
                                 <th>S.No</th>
                                 <th>Name</th>
+                                <th>Material</th>
                                 <th>Pay EMI</th>
                                 <th>Pay Principal</th>
                             </tr>
                         </thead>
                         <tbody>
                             {
-                                product.map((data, index) =>
+                                product.filter((val) => {
+                                    if (search === "") {
+                                        return val;
+                                    } else if (val.customerName.toLowerCase().includes(search.toLowerCase())) {
+                                        return val;
+                                    }
+                                }).map((data, index) =>
                                     <tr key={data.id}>
                                         <td>{index + 1}</td>
                                         <td>{data.customerName}</td>
+                                        <td>{data.ProductName}</td>
                                         <td>
                                             <MdPayment
                                                 role='button'
@@ -189,13 +285,20 @@ const Transaction = () => {
                                             />
                                         </td>
                                         <td>
-                                        <MdPayments
-                                        role='button'
-                                        tabIndex='0'
-                                        onClick={() => handlePrincipal()}
-                                        />
+                                            <MdPayments
+                                                role='button'
+                                                tabIndex='0'
+                                                onClick={() => handlePrincipal(
+                                                    data.id,
+                                                    data.customerId,
+                                                    data.customerName,
+                                                    data.PrincipleAmount,
+                                                    data.monthly_intrest,
+                                                    data.monthly_EMI
+                                                )}
+                                            />
                                         </td>
-                                        
+
                                     </tr>
                                 )
                             }
@@ -232,7 +335,7 @@ const Transaction = () => {
                         </div>
                         : null
                 }
-                 {
+                {
                     payment === 2 ?
                         <div>
                             <Table>
@@ -251,7 +354,6 @@ const Transaction = () => {
                                                 placeholder='Enter Principal Amount'
                                                 value={payPrincipal}
                                                 onChange={(e) => setPayPrincipal(e.target.value)}
-                                                readOnly
                                             />
                                         </td>
                                         <td><Button onClick={() => handlePayPrincipal()}>Pay Principal</Button></td>

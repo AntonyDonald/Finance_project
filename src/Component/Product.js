@@ -1,33 +1,38 @@
 import { Container } from '@mui/system'
 import moment from 'moment/moment'
 import React, { useContext, useState } from 'react'
-import { Button, Col, Form, FormGroup, Row } from 'react-bootstrap'
+import { Button, Col, Form, FormGroup, Row, Table } from 'react-bootstrap'
+import { FaPlus } from 'react-icons/fa'
 import { Link } from 'react-router-dom'
 import Api from '../api/Api'
 import DataContext from '../context/DataContext'
 
 const Product = () => {
-  const { getData, setGetData, product, setProduct } = useContext(DataContext);
+  const { getData, setGetData, product, setProduct,search , setSearch } = useContext(DataContext);
   const [materialName, setMaterialName] = useState("");
   const [amount, setAmount] = useState("");
   const [years, setYears] = useState("");
   const [rate, setRate] = useState("");
   const [description, setDescription] = useState("");
-  const [selectData, setSelectData] = useState("");
+  const [selectData, setSelectData] = useState(0);
   const [customerId, setCustomerId] = useState(0);
   const [customerName, setCustomerName] = useState("");
-  const [monthly_intrest , setMonthly_intrest] = useState("")
+  const [monthly_intrest, setMonthly_intrest] = useState("")
 
-  // -------------------------------years to month conversion ------------------------------------
   const handleSubmit = async (e) => {
     e.preventDefault();
-
     // intrest calculation 
     const result = ((parseFloat(amount)) * (parseFloat(years)) * (parseFloat(rate)));
     const intrest = result / 100;
-    const monthly_EMI = (parseFloat(amount) + parseFloat(intrest)) / 12;
+    const monthly_EMI = (parseFloat(amount) + parseFloat(intrest)) / (parseFloat(years) * 12);
     const totalAmount = (parseFloat(amount) + parseFloat(intrest));
-    const monthly_int = (parseFloat(rate) / 100)/12;
+    const monthly_int = (parseFloat(rate) / 100) / 12;
+
+    // console.log('result = ' ,result);
+    // console.log('intrest = ', intrest);
+    // console.log('monthly_EMI =' ,monthly_EMI);
+    // console.log('totalAmount =' ,totalAmount);
+    // console.log('monthly_int = ' ,monthly_int);
 
     // Date 
     const today = new Date();
@@ -40,7 +45,7 @@ const Product = () => {
     const data = {
       id: id,
       customerId: parseInt(customerId),
-      customerName : customerName,
+      customerName: customerName,
       Date: now,
       ProductName: materialName,
       PrincipleAmount: parseFloat(amount),
@@ -49,22 +54,32 @@ const Product = () => {
       intrest_amount: intrest,
       total_amount: totalAmount,
       monthly_EMI: monthly_EMI,
-      monthly_intrest : monthly_int,
-      description : description
+      monthly_intrest: monthly_int,
+      description: description
     }
-    try {
-      const response = await Api.post('/product_details', data)
-      setProduct([...product, response.data])
-    } catch (err) {
-      console.log(err.message);
-    }
+    if (materialName.trim().length === 0){
+      alert('Empty space is not allowed')
+    }else{
+      try {
+        const response = await Api.post('/product_details', data)
+        setProduct([...product, response.data])
+      } catch (err) {
+        console.log(err.message);
+      }
       setMaterialName("");
       setCustomerName("");
       setAmount("");
       setYears("");
       setRate("");
       setDescription("");
-      setSelectData("");
+      setSelectData(0);
+    }
+   
+  }
+  const handleClick = (id,name) => {
+    setSelectData(1);
+    setCustomerId(id)
+    setCustomerName(name)
   }
   return (
     <Container>
@@ -76,13 +91,53 @@ const Product = () => {
             </Link>
           </div>
         </Col>
-      
         <Col>
+        <div>
+          <Form.Control
+          type='text'
+          placeholder='Search...'
+          value={search}
+          onChange = {(e) => setSearch(e.target.value)}
+          />
+        </div>
+        <Table>
+          <thead>
+            <tr>
+              <th>S.No</th>
+              <th>Name</th>
+              <th>Action</th>
+            </tr>
+          </thead>
+          <tbody>
+            {
+              getData.filter((val) => {
+                if(search === ""){
+                  return val
+                } else if ((val.name).toLowerCase().includes((search).toLowerCase())){
+                  return val;
+                }
+              }).map((obj) => 
+                <tr key={obj.id}>
+                  <td>{obj.id}</td>
+                  <td>{obj.name}</td>
+                  <td><FaPlus
+                  role='button'
+                  tabIndex='0'
+                  onClick={()=> handleClick(obj.id , obj.name)}
+                  /></td>
+                </tr>
+              )
+            }
+          </tbody>
+        </Table>
+        </Col>
+
+        {/* <Col>
           <div>
             <select
               value={selectData}
-              onChange={(e) => {setSelectData(e.target.value) }}
-              onClick={(e) => {setCustomerId(e.target.value); setCustomerName(e.target[e.target.selectedIndex].getAttribute('data-name')) } }
+              onChange={(e) => { setSelectData(e.target.value) }}
+              onClick={(e) => { setCustomerId(e.target.value); setCustomerName(e.target[e.target.selectedIndex].getAttribute('data-name')) }}
             >
               <option style={{ display: 'none' }}>Select</option>
               {
@@ -94,9 +149,9 @@ const Product = () => {
               }
             </select>
           </div>
-        </Col>
+        </Col> */}
         {
-          selectData.length ? (
+          selectData === 1  ? 
             <div>
               <Form onSubmit={handleSubmit}>
                 <FormGroup>
@@ -150,9 +205,10 @@ const Product = () => {
                 </FormGroup>
                 <div>
                   <Button type='submit'>Submit</Button>
+                  <Button onClick={() => setSelectData(0)}>Cancel</Button>
                 </div>
               </Form>
-            </div>) : (<p>Select any Customer</p>)
+            </div> : (null)
         }
 
         <Col>

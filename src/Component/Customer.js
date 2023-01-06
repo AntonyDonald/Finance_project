@@ -1,15 +1,18 @@
 import { FormControlLabel, Radio, RadioGroup } from '@mui/material';
 import React, { useContext, useState } from 'react';
-import { Button, Col, Container, Form, FormGroup, Row, Table } from 'react-bootstrap';
+import { Button, Col, Container, Form, FormGroup, Modal, ModalBody, Row, Table } from 'react-bootstrap';
 import { Link } from 'react-router-dom';
 import Api from '../api/Api';
 import DataContext from '../context/DataContext';
-import {FaEdit , FaTrashAlt} from 'react-icons/fa'
+import { FaEdit, FaTrashAlt } from 'react-icons/fa'
+import axios from 'axios';
 
 const Customer = () => {
-    const { getData , setGetData} = useContext(DataContext);
+    const { getData, setGetData, product,setProduct,search, setSearch } = useContext(DataContext);
     const [details, setDetails] = useState({});
-    const [editId , setEditId] = useState(0);
+    const [editId, setEditId] = useState(0);
+    const [deleteId, setDeleteId] = useState(0);
+    const [modal, setModal] = useState(false);
 
     const handleChange = (e) => {
         const { name, value } = e.target;
@@ -18,44 +21,67 @@ const Customer = () => {
             [name]: value
         })
     }
-    const handleSubmit = async  (e) => {
+    const handleSubmit = async (e) => {
         e.preventDefault();
         const data = {
-            name : details.name ,
-            gender : details.gender ,
-            age : details.age ,
-            phone : details.phone ,
-            address : details.address            
+            name: details.name,
+            gender: details.gender,
+            age: details.age,
+            phone: details.phone,
+            address: details.address
         }
-        if(editId === 0) {
-            try {
-                const response  = await Api.post('/customer' , data)
-                setGetData([...getData , response.data])
-           } catch ( err ) {
-            console.log(err.message)
-           }
+        if ((details.name).trim().length === 0){
+            alert('Empty space is not allowed')
         } else {
-           try{
-                const response = await Api.put(`/customer/${editId}`, data);
-                setGetData(getData.map((data) => data.id === editId ? {...response.data} : data))
-           } catch ( err ) {
-            console.log(err.message)
-           }
+            if (editId === 0) {
+                try {
+                    const response = await Api.post('/customer', data)
+                    setGetData([...getData, response.data])
+                } catch (err) {
+                    console.log(err.message)
+                }
+            } else {
+                try {
+                    const response = await Api.put(`/customer/${editId}`, data);
+                    setGetData(getData.map((data) => data.id === editId ? { ...response.data } : data))
+                } catch (err) {
+                    console.log(err.message)
+                }
+            }
+    
+            setDetails({})
         }
-      
-       setDetails({})
+       
     }
-    const handleEdit = (id , data) => {
+    const handleEdit = (id, data) => {
         setEditId(id)
         setDetails(data)
     }
-    const handleDelete = async (id) => {
-       const filtered = getData.filter((data) => data.id !== id)
-       setGetData(filtered)
-       await Api.delete(`/customer/${id}`)
-
+    const confirmDelete =(id) => {
+        setModal(true)
+        setDeleteId(id)
     }
-    
+    const handleDelete = async () => {
+        const filtered = getData.filter((data) => data.id !== deleteId)
+        var customerId = deleteId
+        setGetData(filtered)
+        const ProductFilter = product.filter((data) => data.customerId === deleteId)
+        await Api.delete(`/customer/${deleteId}`)
+        // if(ProductFilter.length > 0){
+        //     await Api.delete(`/product_details/${customerId}`)
+        // }
+
+        axios.get("http://localhost:3500/product_details/?customerId="+deleteId)
+            .then((response) => (
+                (response.data).map((obj) => {
+                    axios.delete("http://localhost:3500/product_details" , { params : { customerId : deleteId } }).then((res) => console.log(res))
+                })
+            ));
+
+        
+        setModal(false)
+    }
+
     return (
         <Container>
             <Row>
@@ -66,7 +92,7 @@ const Customer = () => {
                 </div>
                 <div className="row">
                     <div className="col">
-                    
+
                         <Form onSubmit={handleSubmit}>
                             <FormGroup>
                                 <Form.Label>Name</Form.Label>
@@ -82,15 +108,15 @@ const Customer = () => {
                             <FormGroup>
                                 <Form.Label>Gender</Form.Label>
                                 <RadioGroup
-                                    
+
                                     row
                                     name='gender'
                                     value={details.gender || ""}
                                     onChange={(e) => handleChange(e)}
                                 >
-                                    <FormControlLabel value='male' label='Male' control={<Radio  required/>} />
-                                    <FormControlLabel value='female' label='Female' control={<Radio required/>} />
-                                    <FormControlLabel value='others' label='Others' control={<Radio required/>} />
+                                    <FormControlLabel value='male' label='Male' control={<Radio required />} />
+                                    <FormControlLabel value='female' label='Female' control={<Radio required />} />
+                                    <FormControlLabel value='others' label='Others' control={<Radio required />} />
                                 </RadioGroup>
                             </FormGroup>
                             <FormGroup>
@@ -133,7 +159,14 @@ const Customer = () => {
                         </Form>
                     </div>
                     <div className="col">
-                       
+                        <div>
+                            <Form.Control 
+                            type='text'
+                            placeholder='Search...'
+                            value={search}
+                            onChange ={ (e) => setSearch(e.target.value)}
+                            />
+                        </div>
                         <Table>
                             <thead>
                                 <tr>
@@ -148,36 +181,51 @@ const Customer = () => {
                             </thead>
                             <tbody>
                                 {
-                                    getData.map((data ,index) => 
-                                    <tr key={data.id}>
-                                        <td>{index + 1}</td>
-                                        <td>{data.name}</td>
-                                        <td>{data.gender}</td>
-                                        <td>{data.age}</td>
-                                        <td>{data.phone}</td>
-                                        <td>{data.address}</td>
-                                        <td>
-                                            <FaEdit
-                                            role='button'
-                                            tabIndex='0'
-                                            onClick={() => handleEdit( data.id , data)}
-                                            />
-                                            <FaTrashAlt
-                                            role='button'
-                                            tabIndex='0'
-                                            onClick={() => handleDelete(data.id)}
-                                            />
-                                        </td>
-                                    </tr>
+                                    getData.filter((val) => {
+                                        if(search === ''){
+                                            return val;
+                                        }else if (
+                                            val.name.toLowerCase().includes(search.toLowerCase()) ||
+                                            val.phone.toLowerCase().includes(search.toLowerCase()) 
+                                        ){
+                                            return val;
+                                        }
+                                    }).map((data, index) =>
+                                        <tr key={data.id}>
+                                            <td>{index + 1}</td>
+                                            <td>{data.name}</td>
+                                            <td>{data.gender}</td>
+                                            <td>{data.age}</td>
+                                            <td>{data.phone}</td>
+                                            <td>{data.address}</td>
+                                            <td>
+                                                <FaEdit
+                                                    role='button'
+                                                    tabIndex='0'
+                                                    onClick={() => handleEdit(data.id, data)}
+                                                />
+                                                <FaTrashAlt
+                                                    role='button'
+                                                    tabIndex='0'
+                                                    onClick={() => confirmDelete(data.id)}
+                                                />
+                                            </td>
+                                        </tr>
                                     )
                                 }
                             </tbody>
                         </Table>
-                        
                     </div>
-                
-                    
                 </div>
+                <Modal show ={modal}>
+                    <Modal.Title>Are You Sure Do you want to Delete</Modal.Title>
+                    <ModalBody>All data will be deleted permanently</ModalBody>
+                    <div className='button'>
+                    <Button onClick={() => handleDelete()}>OK</Button>
+                    <Button onClick={() => setModal(false)}>Cancel</Button>
+                    </div>
+                   
+                </Modal>
             </Row>
         </Container>
     )

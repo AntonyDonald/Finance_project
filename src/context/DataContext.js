@@ -10,6 +10,7 @@ export const DataProvider  = ({children}) => {
      const [product , setProduct] = useState([]);
      const [mainTransaction , setMainTransaction] = useState([]);
      const [allTransaction , setAllTransaction] = useState([]);
+     const [search, setSearch] = useState("");
 
      useEffect(() => {
         const fetchdata1 = async () => {
@@ -56,7 +57,7 @@ export const DataProvider  = ({children}) => {
     return(
         <DataContext.Provider value ={{
             getData , setGetData,product , setProduct,mainTransaction , 
-            setMainTransaction,allTransaction , setAllTransaction
+            setMainTransaction,allTransaction , setAllTransaction,search, setSearch
         }}>{children}</DataContext.Provider>
     )
 }
